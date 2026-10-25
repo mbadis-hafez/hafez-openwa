@@ -1,0 +1,36 @@
+# WhatsApp gateway for Hafez Gallery (github.com/rmyndharis/OpenWA, MIT).
+# Apps that use it join the `openwa` network and call http://openwa:2785.
+services:
+  openwa:
+    image: ghcr.io/rmyndharis/openwa:0.25.0
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_TYPE: sqlite
+      DATABASE_NAME: /app/data/openwa.sqlite
+      DATABASE_SYNCHRONIZE: 'true'
+      ENGINE_TYPE: whatsapp-web.js
+      # A linked number reconnects by itself after a restart.
+      AUTO_START_SESSIONS: 'true'
+      # Webhooks carry the sender's WhatsApp name.
+      WEBHOOK_CONTACT_DETAILS: 'true'
+      # Warm a new number up gradually instead of sending at full speed.
+      SEND_PACING_ENABLED: 'true'
+      # Hosts OpenWA may send webhooks to: container names on the `openwa` network, or this machine.
+      SSRF_ALLOWED_HOSTS: ${SSRF_ALLOWED_HOSTS:-hafez-bot,server,host.docker.internal}
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    ports:
+      # Dashboard and API, reachable only from this machine.
+      - '127.0.0.1:${OPENWA_PORT:-2785}:2785'
+    volumes:
+      - openwa:/app/data
+    networks:
+      - openwa
+
+volumes:
+  openwa:
+
+networks:
+  openwa:
+    name: openwa
